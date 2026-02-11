@@ -1,7 +1,10 @@
-package com.preptrack.preptrack.repository;
+package com.preptrack.repository;
 
-import com.preptrack.preptrack.model.User;
+import com.preptrack.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByEmail(String email);
+    Optional<User> findByUsername(String username);
 }
