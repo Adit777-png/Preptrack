@@ -1,47 +1,39 @@
 package com.preptrack.service;
 
-import com.preptrack.model.User;
+import com.preptrack.dto.RegisterRequest;
+import com.preptrack.dto.UserResponse;
+import com.preptrack.entity.User;
 import com.preptrack.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.security.crypto.password.PasswordEncoder; // ✅ REQUIRED IMPORT
-
-import java.util.Optional;
 
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    public User registerUser(User user) throws Exception {
-
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            throw new Exception("Email already registered");
-        }
-
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            throw new Exception("Username already taken");
-        }
-
-        // 🔐 hash password
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        return userRepository.save(user);
+    public UserService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    public User loginUser(String email, String rawPassword) throws Exception {
+    public UserResponse register(RegisterRequest request) {
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new Exception("User not found"));
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
 
-        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
-            throw new Exception("Invalid credentials");
-        }
+        // 🔐 HASH PASSWORD
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        return user;
+        User savedUser = userRepository.save(user);
+
+        return new UserResponse(
+                savedUser.getId(),
+                savedUser.getUsername(),
+                savedUser.getEmail()
+        );
     }
 }
